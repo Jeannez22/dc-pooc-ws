@@ -2,6 +2,11 @@ const express = require('express')
 const app = express()
 const port = 3000
 
+//Gpio du raspberry
+const Gpio = require('onoff').Gpio;
+// Gpio du capteur
+var sensor = new Gpio(17, 'in', 'both');
+
 //Création et configuration d'un server dse websockets
 const websocket = require('ws');
 const wss = new websocket.Server({ port: 3030 });
@@ -12,26 +17,30 @@ wss.on('connection', function connection(ws) {
 		console.log('received: %s', message);
 	});
 });
-//fonction pour envoyer du texte à tous les clients
-function sendText(text) {
-	for(index in clients) {
-		clients[index].send(text);
-	}
-}
 
-//Configuration de la console pour lire le clavier
-const readline = require('readline');
-readline.emitKeypressEvents(process.stdin);
-process.stdin.setRawMode(true);
-process.stdin.on('keypress', (str, key) => {
-	//On détecte le Ctrl-C pour stopper le serveur.
-	if (key.ctrl && key.name === 'c') {
-		process.exit();
-	} else {
-		//On envoie directement la touche reçue au client.
-		sendText(str);
-	}
-});
+//Fonction pour quitter le script
+function exit() {
+	sensor.unexport();
+	process.exit();
+
+// Détection de mouvements
+sensor.watch(function (err, value) {
+		if(err) exit();
+	//Si le capteur détecte du mouvement 
+	//On affiche 'Mouvement détecté'
+		if(value == 1) {
+			function sendText(text) {
+        			for(index in clients) {
+       					 clients[index].send(text);
+        }}};
+
+//fonction pour envoyer du texte à tous les clients
+//function sendText(text) {
+//	for(index in clients) {
+//		clients[index].send(text);
+//	}
+//};
+
 
 //OS est un utilitaire node qui va nous servir à afficher le nom de notre raspberry
 const os = require("os");
